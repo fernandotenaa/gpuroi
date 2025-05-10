@@ -54,7 +54,7 @@ gpu_specs = {
     "RTX 4070":               {"price": 599.0,   "rental": 0.11, "consumo": 0.20},
     "RTX 4070 Ti":            {"price": 799.0,   "rental": 0.12, "consumo": 0.285},
     "RTX 4080":               {"price": 1199.0,  "rental": 0.24, "consumo": 0.32},
-    "RTX 4090":               {"price": 1599.0,  "rental": 0.39, "consumo": 0.45},
+    "RTX 4090":               {"price": 600.0,  "rental": 0.39, "consumo": 0.45},
     "RTX 5070":               {"price": 549.0,   "rental": 0.09, "consumo": 0.25},
     "RTX 5070 Ti":            {"price": 749.0,   "rental": 0.17, "consumo": 0.30},
     "RTX 5080":               {"price": 999.0,   "rental": 0.20, "consumo": 0.36},
