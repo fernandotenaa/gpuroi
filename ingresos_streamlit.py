@@ -49,6 +49,8 @@ st.title("Calculadora de ROI de data center")
 # Especificaciones de GPUs
 gpu_specs = {
     "NVIDIA A100 (40 GB PCIe)": {"price": 15000.0, "rental": 0.94, "consumo": 0.40},
+    "RTX 3090":               {"price": 1500.0,  "rental": 0.12, "consumo": 0.35},
+    "RTX 3090 Ti":            {"price": 1500.0,  "rental": 0.15, "consumo": 0.45},
     "RTX 4070":               {"price": 599.0,   "rental": 0.11, "consumo": 0.20},
     "RTX 4070 Ti":            {"price": 799.0,   "rental": 0.12, "consumo": 0.285},
     "RTX 4080":               {"price": 1199.0,  "rental": 0.24, "consumo": 0.32},
