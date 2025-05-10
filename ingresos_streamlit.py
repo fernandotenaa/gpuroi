@@ -1,13 +1,13 @@
 import streamlit as st
 
 # Función para calcular ROI de un conjunto de GPUs
-def calcular_roi(gpu_counts, vast, gpu_specs):
+def calcular_roi(gpu_counts, gpu_vasts, gpu_specs):
     """
-    Calcula el ROI anual de un conjunto de GPUs.
+    Calcula el ROI anual de un conjunto de GPUs con eficiencia de uso específica por modelo.
 
     Parámetros:
     gpu_counts : dict - {modelo: cantidad}
-    vast       : float - Porcentaje de uso o eficiencia (entre 0 y 1)
+    gpu_vasts  : dict - {modelo: eficiencia de uso (0-1)}
     gpu_specs  : dict - Especificaciones de GPUs
 
     Retorna:
@@ -15,13 +15,13 @@ def calcular_roi(gpu_counts, vast, gpu_specs):
     """
     # Ingreso mensual total
     ingreso_mensual = sum(
-        specs['rental'] * count * (24 * vast) * 28
+        specs['rental'] * count * (24 * gpu_vasts[model]) * 28
         for model, count in gpu_counts.items()
         for specs in [gpu_specs[model]]
     )
     # Costos de energía mensual total
     costos_energia = sum(
-        specs['consumo'] * (24 * vast) * 28 * count * 0.15
+        specs['consumo'] * (24 * gpu_vasts[model]) * 28 * count * 0.15
         for model, count in gpu_counts.items()
         for specs in [gpu_specs[model]]
     )
@@ -44,7 +44,7 @@ def calcular_roi(gpu_counts, vast, gpu_specs):
     return roi, ingreso_mensual, costos_energia, costos_fijos, ingreso_anual, depreciacion_total, capex_total
 
 # Título de la aplicación
-st.title("Calculadora de ROI de GPUs alquiladas (Multi-GPU)")
+st.title("Calculadora de ROI de data center")
 
 # Especificaciones de GPUs
 gpu_specs = {
@@ -83,17 +83,8 @@ gpu_specs = {
     "NVIDIA Titan Xp":        {"price": 1199.0,  "rental": 0.08, "consumo": 0.25},
 }
 
-# Sidebar: configuración
+# Sidebar: configuración del datacenter
 st.sidebar.header("Configuración del datacenter")
-
-# Eficiencia de uso
-dp_vast = st.sidebar.slider(
-    "Eficiencia de uso (vast)",
-    min_value=0.0,
-    max_value=1.0,
-    value=0.75,
-    step=0.01
-)
 
 # Selección de múltiples modelos de GPU
 gpu_modelos = st.sidebar.multiselect(
@@ -102,24 +93,35 @@ gpu_modelos = st.sidebar.multiselect(
     default=[list(gpu_specs.keys())[0]]
 )
 
-# Número de GPUs por modelo
-gpu_counts = {}
-for model in gpu_modelos:
-    gpu_counts[model] = st.sidebar.number_input(
-        f"Número de unidades de {model}",
-        min_value=1,
-        value=1,
-        step=1
-    )
-
-# Validación: al menos un modelo
+# Validación: al menos un modelo seleccionado
 if not gpu_modelos:
     st.sidebar.error("Selecciona al menos un modelo de GPU para continuar.")
     st.stop()
 
+# Parámetros por modelo: cantidad y eficiencia de uso
+gpu_counts = {}
+gpu_vasts = {}
+for model in gpu_modelos:
+    st.sidebar.subheader(f"Parámetros para {model}")
+    gpu_counts[model] = st.sidebar.number_input(
+        f"Cantidad de {model}",
+        min_value=1,
+        value=1,
+        step=1,
+        key=f"count_{model}"
+    )
+    gpu_vasts[model] = st.sidebar.slider(
+        f"Eficiencia de uso (vast) de {model}",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.75,
+        step=0.01,
+        key=f"vast_{model}"
+    )
+
 # Cálculo de ROI y desgloses
 roi, ingreso_mensual, costos_energia, costos_fijos, ingreso_anual, depreciacion_total, capex_total = \
-    calcular_roi(gpu_counts, dp_vast, gpu_specs)
+    calcular_roi(gpu_counts, gpu_vasts, gpu_specs)
 
 # Mostrar ROI estimado
 st.metric("ROI estimado (%)", f"{roi:.2f}%")
@@ -127,14 +129,17 @@ st.metric("ROI estimado (%)", f"{roi:.2f}%")
 # Desglose de cálculos
 with st.expander("Ver desglose de cálculos"):
     st.write("**Configuración seleccionada:**")
-    for model, count in gpu_counts.items():
+    for model in gpu_modelos:
+        count = gpu_counts[model]
+        vast = gpu_vasts[model]
         specs = gpu_specs[model]
-        st.write(f"- {model}: {count} unidad(es) | Precio: ${specs['price']:,} | Alquiler h: ${specs['rental']:.2f}/h | Consumo: {specs['consumo']:.3f} kWh/h")
+        st.write(f"- {model}: {count} unidad(es) | Efficiency: {vast:.2f} | Precio: ${specs['price']:,} | Alquiler h: ${specs['rental']:.2f}/h | Consumo: {specs['consumo']:.3f} kWh/h")
     st.write(f"\n**Ingreso mensual total:** ${ingreso_mensual:,.2f}")
     st.write(f"**Costos de energía mensuales:** ${costos_energia:,.2f}")
     st.write(f"**Costos fijos mensuales (energía + $60 + $30):** ${costos_fijos:,.2f}")
     st.write(f"**Ingreso anual neto:** ${ingreso_anual:,.2f}")
     st.write(f"**Depreciación anual total (4 años):** ${depreciacion_total:,.2f}")
     st.write(f"**Inversión total (CAPEX):** ${capex_total:,.2f}")
+
 
 
